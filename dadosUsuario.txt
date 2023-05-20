@@ -3,3 +3,4 @@ ste,0,5
 joao,0,9
 jooo,0,9
 zeca,0,7
+Leonardo,-1,5

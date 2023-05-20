@@ -2,7 +2,13 @@
 #include <conio.h>
 #include <stdlib.h>
 #include <string.h>
-#define MAX_PLAYERS 100
+#include <stdbool.h>
+
+int nivel;
+
+#define MAX_PLAYERS 50
+#define TAMANHO_TABELA nivel
+#define NUM_NAVIOS 3 
 
 struct jogador {
     char nome[100];
@@ -10,17 +16,25 @@ struct jogador {
     int nivelRanking;
 };
 
-int nivel;
+typedef struct {
+    int linha;
+    int coluna;
+} Coordenada;
+
+typedef struct {
+    char simbolo;
+    int tamanho;
+    Coordenada cord[4];
+} Navio;
 
 void salvarDadosUsuario(char[100], int pontuacao, int nivel);
 void ranking();
 void menuInicial();
 void inserirUsername(int nivel);
 void lerArquivoTxt();
+void rodarMenu(char nomeJogador[100]);
 
-
-/*MONTA A TABELA DE ACORDO COM A DIFICULDADE DO JOGO*/
-void montarTabela(int tabuleiro[][nivel]){   
+void montarTabela(char tabuleiro[TAMANHO_TABELA][TAMANHO_TABELA]){   
     int linha, coluna;
 
     for(linha=0 ; linha < nivel ; linha++ )
@@ -28,162 +42,6 @@ void montarTabela(int tabuleiro[][nivel]){
             tabuleiro[linha][coluna]=-1;
 }
 
-/*MOSTRA A TABELA PARA O USUÁRIO COM AS CASAS QUE FORAM OU NÃO JOGADAS*/
-void mostrarTabuleiro(int tabuleiro[][nivel], int pontos, char nomeJogador[100]){
-    int linha, coluna;
-    printf("                                                           ------------------------------------------------------------------\n");
-    printf("                                                           |                    UniNaval - Sua emoção é aqui                |\n");
-    printf("                                                           ------------------------------------------------------------------\n");
-    printf("                                                           ------------------------------------------------------------------\n");
-    printf("                                                           |      Digite 123 na linha para sair | Salvamento automático     |\n");
-    printf("                                                           ------------------------------------------------------------------\n");
-    printf("\n");
-    printf("                                                                                    Jogador: %s \n", nomeJogador                );
-    printf("                                                                                     Pontos: %i \n", pontos                     );
-    printf("\n");
-    
-    printf("\n");
-    for(coluna=0; coluna < nivel; coluna++){
-            printf("\t| %d |", coluna + 1);
-    }
-    printf("\n");
-    for(linha=0; linha < nivel; linha++ ){
-        if(nivel == 5){
-            printf("\t--------------------------------------\n");
-        } else if( nivel == 7){
-            printf("\t-----------------------------------------------------\n");
-        } else{
-            printf("\t---------------------------------------------------------------------\n");
-        }
-        printf("%d",linha+1);
-        for(coluna=0; coluna < nivel; coluna++ ){
-            if(tabuleiro[linha][coluna]==-1){
-                printf("\t| ~ |");
-            }else if(tabuleiro[linha][coluna]==0){
-                printf("\t| A |");
-            }else if(tabuleiro[linha][coluna]==1){
-                printf("\t| N |");
-            }
-        }
-            printf("\n");
-    }
-    
-    salvarDadosUsuario(nomeJogador, pontos, nivel);
-}
-
-/*MONTA OS NÁVIOS DE MISTURADA*/    
-void montarNavios(int navios[][2]){
-    srand(time(NULL));
-    int navio, ultima;
-
-    for(navio=0 ; navio < nivel; navio++){
-        navios[navio][0]= rand()%nivel;
-        navios[navio][1]= rand()%nivel;
-    }
-}
-
-/*MONTA A JOGADA COM O USUÁRIO*/
-void jogadaUsuario(int tiro[2]){
-    int opcao; 
-
-    printf("\n");
-    printf("Linha: ");
-    scanf("%d",&tiro[0]);
-    if(tiro[0] == 123){
-        menuInicial();
-    }
-    tiro[0]--;
-    
-    printf("Coluna: ");
-    scanf("%d",&tiro[1]);
-    tiro[1]--;
-}
-
-/*VERIFICA SE A JOGADA ACERTOU NAVIO*/
-int acertouNavio(int tiro[2], int navios[][2]){
-    int navio;
-
-    for(navio=0 ; navio < nivel ; navio++){
-        if( tiro[0]==navios[navio][0] && tiro[1]==navios[navio][1]){
-            printf("Você acertou em um navio com o tiro (%d,%d)\n",tiro[0]+1,tiro[1]+1);
-            return 1;
-        }
-    }
-    return 0;
-}
-
-/*ATUALIZA O TABULEIRA COM O ACERTO DO USUARIO E COM O ERRO*/
-void atualizaTabuleiro(int tiro[2], int navios[][2], int tabuleiro[][nivel]){ 
-    if(acertouNavio(tiro,navios))
-        tabuleiro[tiro[0]][tiro[1]]=1;
-    else
-        tabuleiro[tiro[0]][tiro[1]]=0;
-}
-
-/*DICAS PARA O USUÁRIO*/
-/*SERÁ REMOVIDO NO FUTURO*/
-void dicas(int tiro[2], int navios[][2], int attempt){
-        
-    int linha=0, coluna=0,row;
-
-    //contar quantos navios existem na linha/coluna
-    for(row=0 ; row < 3 ; row++){
-        if(navios[row][0]==tiro[0])
-            linha++;
-           if(navios[row][1]==tiro[1])
-              coluna++;
-    }
-
-    printf("\nDica %d: \nLinha %d -> %d navios\nColuna %d -> %d navios\n",attempt,tiro[0]+1,linha,tiro[1]+1,coluna);
-}
-
-/*O JOGO RODA TODO AQUI*/
-void rodarMenu(char nomeJogador[100]){
-    int tabuleiro[nivel][nivel];
-    int navios[nivel][2];
-    int tiro[2];
-    int tentativas=0, atingiu=0, pontos=0;
-    char opcao;
-
-    montarTabela(tabuleiro);
-    montarNavios(navios);
-    
-    printf("\n");
-    
-    do{     
-        mostrarTabuleiro(tabuleiro, pontos, nomeJogador);
-        jogadaUsuario(tiro);
-        tentativas++;
-        if(tabuleiro[tiro[0]][tiro[1]] != -1){
-            printf("Jogada já realizada");
-            system("cls");
-        }
-        else if(acertouNavio(tiro, navios)){
-            dicas(tiro,navios,tentativas);
-            atingiu++;
-            pontos++;
-            system("cls");
-        }
-        else{
-            system("cls");
-            dicas(tiro,navios,tentativas);
-        }
-        
-        atualizaTabuleiro(tiro,navios,tabuleiro);
-    }
-    
-    while(atingiu!=nivel);
-
-        printf("\n\n\nVocê fechou o jogo com %d tentativas \n", tentativas);
-        printf("\n");
-        mostrarTabuleiro(tabuleiro, pontos, nomeJogador);
-        printf("\n");
-        system("pause");
-        menuInicial();
-            
-}
-
-/*SALVA OS DADOS DO USUARIO EM UM ARQUIVO TXT*/
 void salvarDadosUsuario(char str[100], int pontuacao, int nivel){
 
    FILE *pont_arq; // cria variável ponteiro para o arquivo
@@ -220,7 +78,7 @@ void salvarDadosUsuario(char str[100], int pontuacao, int nivel){
     fclose(pont_arq);
 }
 
-/*ORDERNA A PONTUACAO DE ACORDO COM OS DADOS DO TXT*/
+
 void ordernarPontuacao (struct jogador jogadores[], int n) {
     int i, j;
     struct jogador temp;
@@ -235,7 +93,6 @@ void ordernarPontuacao (struct jogador jogadores[], int n) {
     }
 }
 
-/*LEITURA DE ARQUIVO*/
 void lerArquivoTxt(){
 
   FILE *pont_arq;
@@ -278,7 +135,6 @@ void lerArquivoTxt(){
   fclose(pont_arq);    
 }
 
-/*TELA PARA ESCOLHA DA DIFICULDADE*/
 int escolherDificuldade(){
     int escolha;
     printf ("\n");
@@ -287,9 +143,9 @@ int escolherDificuldade(){
     printf ("                                                          ---------------------------------------------------\n");
     printf ("\n");
     printf ("                                                          ---------------------------------------------------\n");
-    printf ("                                                          -     1 - Fácil - Tabuleiro 5x5 (5 navios)        -\n");
-    printf ("                                                          -     2 - Médio - Tabuleiro 7x7 (7 navios)        -\n");
-    printf ("                                                          -     3 - Difícil - Tabuleiro 9x9 (9 navios)      -\n");
+    printf ("                                                          -     1 - Fácil - Tabuleiro 5x5 (3 navios)        -\n");
+    printf ("                                                          -     2 - Médio - Tabuleiro 7x7 (3 navios)        -\n");
+    printf ("                                                          -     3 - Difícil - Tabuleiro 10x10 (3 navios)    -\n");
     printf ("                                                          ---------------------------------------------------\n");
     printf ("\n");
     printf ("                                                          Escolha o nível:  "                                   );
@@ -300,16 +156,17 @@ int escolherDificuldade(){
     } else if (escolha == 2) {
        nivel = 7;
     } else {
-       nivel = 9; 
+       nivel = 10; 
     }
     
     system("cls");
+    //system("clear");
     inserirUsername(nivel);
 
     return nivel;
 }
 
-/*TELA PARA INFORMA O NOME DO JOGADOR*/
+
 void inserirUsername(nivel){
     char nomeJogador[100];
     
@@ -321,12 +178,13 @@ void inserirUsername(nivel){
     printf ("                                                          Seu apelido: "                                        );
     scanf("%s", nomeJogador);
     system("cls");
+    //system("clear");
     rodarMenu(nomeJogador);
 }
 
-/*MENU INICIAL*/
 void menuInicial(){
     system("cls");
+    //system("clear");
     int choice;
     while(1){
         printf("\n");
@@ -349,10 +207,12 @@ void menuInicial(){
         switch(choice) {
             case 1:
                 system("cls");
+            //system("clear");
                 escolherDificuldade();
                 break;
             case 2:
                 system("cls");
+            //system("clear");
                 ranking();
                 break;
             case 3:
@@ -365,7 +225,6 @@ void menuInicial(){
     }
 }
 
-/*RANKING*/
 void ranking(){
     int choice;
 
@@ -396,6 +255,240 @@ void ranking(){
                 default:
                     printf("Digite uma opção válida. \n");
                     system("cls");                        
+                    //system("clear");
         }
     }
+}
+
+void mostrarTabuleiro(char tabuleiro[TAMANHO_TABELA][TAMANHO_TABELA], int pontos, char nomeJogador[100]) {
+    char navioPosicao = '~';
+    printf("                                                           ------------------------------------------------------------------\n");
+    printf("                                                           |                    UniNaval - Sua emoção é aqui                |\n");
+    printf("                                                           ------------------------------------------------------------------\n");
+    printf("                                                           ------------------------------------------------------------------\n");
+    printf("                                                           |   Navio com 2 casas |  Navio com 3 casas | Navio com 4 casas   |\n");
+    printf("                                                           ------------------------------------------------------------------\n");
+    printf("\n");
+    printf("                                                           ------------------------------------------------------------------\n");
+    printf("                                                           |             A - Água | X - Acertou | ~ - Não jogou             |\n");
+    printf("                                                           |                Acerto +3 pontos | Água -1 ponto                |\n");
+    printf("                                                           ------------------------------------------------------------------\n");
+    printf("\n");
+    printf("                                                                                    Jogador: %s \n", nomeJogador                );
+    printf("                                                                                     Pontos: %i \n", pontos                     );
+    printf("\n");
+    printf("                                                           ------------------------------------------------------------------\n");
+    printf("                                                           |      Digite 123 na linha para sair | Salvamento automático     |\n");
+    printf("                                                           ------------------------------------------------------------------\n");
+    printf("\n");
+    
+
+    printf("  ");
+    int i, j;
+    if(nivel == 5){
+        printf("\t\t\t\t\t\t\t\t\t");
+        for (i = 0; i < TAMANHO_TABELA; i++) {
+            printf("    %2d ", i);
+        }
+        printf("\n");
+        for (i = 0; i < TAMANHO_TABELA; i++) {
+            printf("\t\t\t\t\t\t\t\t\t");
+            printf(" %d|", i);
+            for (j = 0; j < TAMANHO_TABELA; j++) {
+                if (tabuleiro[i][j] == 'S') {
+                    printf("  %-2c  |", navioPosicao);
+                } else {
+                    printf("  %-2c  |", tabuleiro[i][j]);
+                }
+            }
+            printf("\n");
+        }
+        salvarDadosUsuario(nomeJogador, pontos, nivel);
+    } else if(nivel == 7){
+        printf("\t\t\t\t\t\t\t\t");
+        for (i = 0; i < TAMANHO_TABELA; i++) {
+            printf("    %2d ", i);
+        }
+        printf("\n");
+        for (i = 0; i < TAMANHO_TABELA; i++) {
+            printf("\t\t\t\t\t\t\t\t");
+            printf(" %d|", i);
+            for (j = 0; j < TAMANHO_TABELA; j++) {
+                if (tabuleiro[i][j] == 'S') {
+                    printf("  %-2c  |", navioPosicao);
+                } else {
+                    printf("  %-2c  |", tabuleiro[i][j]);
+                }
+            }
+            printf("\n");
+        }
+        salvarDadosUsuario(nomeJogador, pontos, nivel);
+    }  else {
+        printf("\t\t\t\t\t\t\t");
+        for (i = 0; i < TAMANHO_TABELA; i++) {
+            printf("    %2d ", i);
+        }
+        printf("\n");
+        for (i = 0; i < TAMANHO_TABELA; i++) {
+            printf("\t\t\t\t\t\t\t");
+            printf(" %d|", i);
+            for (j = 0; j < TAMANHO_TABELA; j++) {
+                if (tabuleiro[i][j] == 'S') {
+                    printf("  %-2c  |", navioPosicao);
+                } else {
+                    printf("  %-2c  |", tabuleiro[i][j]);
+                }
+            }
+            printf("\n");
+        }
+        salvarDadosUsuario(nomeJogador, pontos, nivel);
+    }
+} 
+
+int jogadaValidaUsuario(int linha, int coluna) {
+    return linha >= 0 && linha < TAMANHO_TABELA && coluna >= 0 && coluna < TAMANHO_TABELA;
+}
+
+int navioValido(Navio navio) {
+    int i;
+    for (i = 0; i < navio.tamanho; i++) {
+        if (!jogadaValidaUsuario(navio.cord[i].linha, navio.cord[i].coluna)) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+int sobreporNavio(Navio navio, char tabuleiro[TAMANHO_TABELA][TAMANHO_TABELA]) {
+    int i, j;
+    
+    for (i = 0; i < navio.tamanho; i++) {
+        int linha = navio.cord[i].linha;
+        int coluna = navio.cord[i].coluna;
+        //if (tabuleiro[linha][coluna] != '-') {
+        if (tabuleiro[linha][coluna] != '~') {    
+            return 1;
+        }
+    }
+    return 0;
+}
+
+void inserirNavios(char tabuleiro[TAMANHO_TABELA][TAMANHO_TABELA], Navio navios[]) {
+    int tamanhos[NUM_NAVIOS] = {2, 3, 4};
+    int i, j;
+    srand(time(NULL));
+    for (i = 0; i < NUM_NAVIOS; i++) {
+        Navio navio;
+        navio.tamanho = tamanhos[i];
+        navio.simbolo = 'S';
+        do {
+            int start_linha = rand() % TAMANHO_TABELA;
+            int start_coluna = rand() % TAMANHO_TABELA;
+            int direcao = rand() % 2; // 0 para horizontal, 1 para vertical
+            if (direcao == 0) { // horizontal
+                for (j = 0; j < navio.tamanho; j++) {
+                    navio.cord[j].linha = start_linha;
+                    navio.cord[j].coluna = start_coluna + j;
+                }
+            } else { // vertical
+                for (j = 0; j < navio.tamanho; j++) {
+                    navio.cord[j].linha = start_linha + j;
+                    navio.cord[j].coluna = start_coluna;
+                }
+            }
+        } while (!navioValido(navio) || sobreporNavio(navio, tabuleiro));
+        for (j = 0; j < navio.tamanho; j++) {
+            int linha = navio.cord[j].linha;
+            int coluna = navio.cord[j].coluna;
+            tabuleiro[linha][coluna] = 'S';
+        }
+        navios[i] = navio;
+    }
+}
+
+int contarNavios(char tabuleiro[TAMANHO_TABELA][TAMANHO_TABELA]) {
+    int count = 0;
+    int i, j;
+    for (i = 0; i < TAMANHO_TABELA; i++) {
+        for (j = 0; j < TAMANHO_TABELA; j++) {
+            if (tabuleiro[i][j] == 'S') {
+                count++;
+            }
+        }
+    }
+    return count;
+}
+
+void rodarMenu(char nomeJogador[100]){
+    int i, j;
+    srand(time(NULL));
+    char tabuleiro[TAMANHO_TABELA][TAMANHO_TABELA];
+    Navio navios[NUM_NAVIOS];
+    for (i = 0; i < TAMANHO_TABELA; i++) {
+        for (j = 0; j < TAMANHO_TABELA; j++) {
+            //tabuleiro[i][j] = '-';
+            tabuleiro[i][j] = '~';
+        }
+    }
+
+    inserirNavios(tabuleiro, navios);
+    int numeroNavios = contarNavios(tabuleiro);
+    int num_tentativas = 0;
+    int pontos = 0;
+
+    while (numeroNavios > 0) {
+        mostrarTabuleiro(tabuleiro, pontos, nomeJogador);
+        printf("\n");
+        //char guess_row;
+        int guess_row;
+        int guess_col;
+        printf("\n");
+        printf("Existem %d partes de navio no tabuleiro.\n\n", numeroNavios);
+
+        printf("Linha: ");
+        scanf("%d", &guess_row);
+        if(guess_row == 123){
+            menuInicial();
+        }
+        printf("Coluna: ");
+        scanf("%d", &guess_col);
+
+        int row = guess_row;
+        int col = guess_col;
+
+        if (!jogadaValidaUsuario(row, col)) {
+            system("CLS");
+            //system("clear");
+            printf("Jogada inválida.\n\n");
+            continue;
+            
+        }
+        if (row == 24 && col == 11) {
+            menuInicial();
+            continue;
+        }
+        system("CLS");
+        //system("clear");
+        //if (tabuleiro[row][col] == '-') {
+        if (tabuleiro[row][col] == '~') {    
+            printf("Tiro na água!\n\n");
+            tabuleiro[row][col] = 'A';
+            pontos--;                    
+        } else if (tabuleiro[row][col] == 'S') {
+            printf("Você acertou uma parte do navio!\n\n");
+            tabuleiro[row][col] = 'X';
+            num_tentativas++;
+            pontos+=3;
+            numeroNavios--;
+        } else {
+            printf("Jogada já foi atingida.\n\n");
+        }
+    }
+    printf("\n");
+    mostrarTabuleiro(tabuleiro, pontos, nomeJogador);
+    pontos++;
+    printf("Parabéns, você ganhou o jogo em %d tentativas!\n", num_tentativas);
+    printf("\n");
+    system("pause");
+    menuInicial();
 }
